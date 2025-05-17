@@ -1,0 +1,44 @@
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: lightgray;
+}
+.a4 {
+  width: 70.7vw;
+  height: 100vw;
+  background-color: white;
+  padding: 40px;
+  box-sizing: border-box;
+}
+#grid-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  /* grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(40, 1fr); */
+  pointer-events: none;
+  z-index: 0;
+}
+
+#grid-overlay div {
+  border: 1px solid rgba(0, 0, 0, 0.1); /* Light grid lines */
+}
+#container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.segment {
+  position: absolute;
+  background-color: rgba(194, 213, 219, 0.5);
+  border: 1px rgba(89, 157, 212, .8) solid;
+  outline: 1px rgba(89, 157, 212, .8) solid;
+  box-sizing: border-box;
+}
+.segment:hover {
+  background-color: rgba(173, 216, 230, .5);
+}
