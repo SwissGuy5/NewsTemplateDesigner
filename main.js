@@ -85,14 +85,117 @@ function addSegment(orientation, snap=false) {
     container.appendChild(newSegment);
   }
 }
+function findNearestEdge(segmentDimensions) {
+  let nearestEdge = {
+    distance: Infinity,
+    type: null
+  };
+  const relativeMousePos = {
+    x: mousePos.x - containerDimensions.left,
+    y: mousePos.y - containerDimensions.top
+  }
+  const edges = {
+    left: segmentDimensions.left - containerDimensions.left,
+    top: segmentDimensions.top - containerDimensions.top,
+    right: segmentDimensions.left - containerDimensions.left + segmentDimensions.width,
+    bottom: segmentDimensions.top - containerDimensions.top + segmentDimensions.height
+  };
+  if (Math.abs(edges.left - relativeMousePos.x) < nearestEdge.distance) {
+    nearestEdge = {
+      distance: Math.abs(edges.left - relativeMousePos.x),
+      type: "left"
+    }
+  }
+  if (Math.abs(edges.top - relativeMousePos.y) < nearestEdge.distance) {
+    nearestEdge = {
+      distance: Math.abs(edges.top - relativeMousePos.y),
+      type: "top"
+    }
+  }
+  if (Math.abs(edges.right - relativeMousePos.x) < nearestEdge.distance) {
+    nearestEdge = {
+      distance: Math.abs(edges.right - relativeMousePos.x),
+      type: "right"
+    }
+  }
+  if (Math.abs(edges.bottom - relativeMousePos.y) < nearestEdge.distance) {
+    nearestEdge = {
+      distance: Math.abs(edges.bottom - relativeMousePos.y),
+      type: "bottom"
+    }
+  }
+
+  return nearestEdge;
+}
+function findNeighbor(segment, nearestEdge) {
+  const distanceToNextSegment = minGap * 4;
+  let neighborSegment;
+  switch (nearestEdge) {
+    case "left":
+      neighborSegment = document.elementFromPoint(mousePos.x - distanceToNextSegment, mousePos.y);
+      break;
+    case "top":
+      neighborSegment = document.elementFromPoint(mousePos.x, mousePos.y - distanceToNextSegment);
+      break;
+    case "right":
+      neighborSegment = document.elementFromPoint(mousePos.x + distanceToNextSegment, mousePos.y);
+      break;
+    case "bottom":
+      neighborSegment = document.elementFromPoint(mousePos.x, mousePos.y + distanceToNextSegment);
+      break;
+  }
+
+  if (!neighborSegment || segment == neighborSegment || !neighborSegment.classList.contains("segment")) {
+    return null;
+  }
+  return neighborSegment;
+}
 
 // --- Event Listeners ---
-document.addEventListener("mousemove", e => {
+container.addEventListener("mousemove", e => {
   mousePos = {
     x: e.clientX,
     y: e.clientY
   }
-  // console.log();
+});
+container.addEventListener("mousedown", e => {
+  if (e.button != 2) {
+    return;
+  }
+
+  // Find current edge and neighboring segment
+  const segment = document.elementFromPoint(mousePos.x, mousePos.y);
+  const segmentDimensions = segment.getBoundingClientRect();
+  const segmentPercentages = {
+    width: Number(segment.style.width.slice(0, -1)),
+    height: Number(segment.style.height.slice(0, -1)),
+    left: Number(segment.style.left.slice(0, -1)),
+    top: Number(segment.style.top.slice(0, -1)),
+  }
+
+  if (!segment.classList.contains("segment")) {
+    console.log("Not a segment");
+    return;
+  }
+
+  const nearestEdge = findNearestEdge(segmentDimensions);
+  // const minGapPercentage = minGap / 100 * containerDimensions.height
+  // if (nearestEdge.distance > minGap) {
+  //   console.log("Edge too far")
+  //   return;
+  // }
+  const neighborSegment = findNeighbor(segment, nearestEdge.type);
+  if (!neighborSegment) {
+    console.log("Not a neighboor")
+    return;
+  }
+  console.log(segment, neighborSegment);
+
+  // Handle resizing
+  
+})
+container.addEventListener('contextmenu', e => {
+  e.preventDefault();
 });
 document.addEventListener("keydown", e => {
   switch (e.key) {
@@ -104,12 +207,9 @@ document.addEventListener("keydown", e => {
       break;
   }
 });
-document.addEventListener("click", e => {
-
-})
 
 // --- Grid ---
-let gridMultiplier = 2;
+let gridMultiplier = 1;
 let rows = 22 * gridMultiplier;
 let cols = 16 * gridMultiplier;
 const gridOverlay = document.getElementById('grid-overlay');

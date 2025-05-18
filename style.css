@@ -5,8 +5,8 @@ body {
   background-color: lightgray;
 }
 .a4 {
-  width: 70.7vw;
-  height: 100vw;
+  width: 70.7vh;
+  height: 100vh;
   background-color: white;
   padding: 40px;
   box-sizing: border-box;
