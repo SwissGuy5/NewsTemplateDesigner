@@ -6,12 +6,11 @@ class Container {
    */
   constructor (containerElement, firstSegmentElement, gridElement) {
     this.element = containerElement || document.getElementById("container");
-    this.segments = [new Segment(firstSegmentElement, this)];
+    this.segments = [new Segment(this, firstSegmentElement)];
     this.inputHandler = new InputHandler(this);
-    this.grid = new Grid(gridElement);
+    this.grid = new Grid(this, gridElement);
     this.settings = {
-      minPixelGap: 2,
-      snapToGrid: true
+      snap: true
     }
   }
 
@@ -21,6 +20,10 @@ class Container {
 
   get focusedSegment() {
     return this.findSegment(this.inputHandler.relativeMousePos.x, this.inputHandler.relativeMousePos.y);
+  }
+
+  get minGap() {
+    return this.grid.minGap;
   }
 
   // Relative x and y pixel displacement
@@ -41,20 +44,73 @@ class Container {
     return foundSegment;
   }
 
-  addSegment(newSegment) {
-    // Keep the sorted order on the x axis.
-    this.segments.forEach((segment, i) => {
-      if (newSegment < segment.boundingBox.x) {
-        this.segments.splice(i, 0, newSegment);
-      }
-    })
+  addSegment(newElement) {
+    const newSegment = new Segment(this, newElement);
+    this.element.appendChild(newElement);
+    this.segments.push(newSegment);
+
+    // // Keep the sorted order on the x axis.
+    // this.segments.forEach((segment, i) => {
+    //   if (newSegment < segment.boundingBox.x) {
+    //     this.segments.splice(i, 0, newSegment);
+    //   }
+    // })
+    return newSegment;
   }
 
+  /**
+   * Splits a segment into two seperate ones at the cursors position.
+   * @param {String} type Vertical or Horizontal
+   */
   splitSegment(type) {
     const segment = this.focusedSegment;
+    if (!segment) return;
+
+    // If new edge is too close to existing edge
+    const nearestEdge = segment.nearestEdge;
+    if (nearestEdge.distance < this.minGap) return;
+    
+    // Get dimensions and snap to grid
+    const relativeMousePos = this.inputHandler.relativeMousePos;
+    let newDimensions = {
+      x: relativeMousePos.x - segment.boundingBox.left,
+      y: relativeMousePos.y - segment.boundingBox.top
+    };
+    if (this.settings.snap) newDimensions = this.grid.snapToGrid(newDimensions);
+    
+    const segmentPercentages = segment.percentages;
+    const newPercentages = {
+      width: newDimensions.x / segment.boundingBox.width * segmentPercentages.width,
+      height: newDimensions.y / segment.boundingBox.height * segmentPercentages.height
+    }
+    const newSegment = segment.duplicate();
+    if (type == "vertical") {
+      segment.resize({
+        width: newPercentages.width
+      })
+      newSegment.resize({
+        left: segmentPercentages.left + newPercentages.width,
+        width: segmentPercentages.width - newPercentages.width
+      })
+    } else if (type == "horizontal") {
+      segment.resize({
+        height: newPercentages.height
+      })
+      newSegment.resize({
+        top: segmentPercentages.top + newPercentages.height,
+        height: segmentPercentages.height - newPercentages.height
+      })
+    }
   }
 
   removeEdge() {
+    // const segment = this.focusedSegment;
+    // if (!segment) return;
+
+    // const nearestEdge = segment.nearestEdge;
+    // if (nearestEdge.distance > this.settings.minPixelGap) return;
+    // console.log(nearestEdge);
+    
     // // Find current edge and neighboring segment
     // const segment = document.elementFromPoint(mousePos.x, mousePos.y);
     // const segmentDimensions = segment.getBoundingClientRect();
