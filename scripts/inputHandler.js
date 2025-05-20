@@ -43,7 +43,7 @@ class InputHandler {
           this.container.splitSegment("horizontal");
           break;
         case "3":
-          this.container.focusedSegment;
+          console.log(this.container.focusedSegment);
           break;
       }
     });

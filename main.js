@@ -187,7 +187,7 @@ container.addEventListener("mousedown", e => {
   // }
   const neighborSegment = findNeighbor(segment, nearestEdge.type);
   if (!neighborSegment) {
-    console.log("Not a neighboor")
+    console.log("Not a neighbor")
     return;
   }
   console.log(segment, neighborSegment);

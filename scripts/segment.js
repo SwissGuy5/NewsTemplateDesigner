@@ -85,6 +85,38 @@ class Segment {
   }
 
   /**
+   * Checks wether two segments are adjacent without using the neighbor property.
+   * @param {Segment} segment The segment to test against.
+   * @returns {boolean} True if segments touch, false otherwise.
+   */
+  isTouching(segment) {
+    const shareVerticalEdge = precisionEquality(this.boundingBox.left, segment.boundingBox.left + segment.boundingBox.width) || precisionEquality(this.boundingBox.left + this.boundingBox.width, segment.boundingBox.left);
+    const withinTopEdge = this.boundingBox.top >= segment.boundingBox.top && this.boundingBox.top <= segment.boundingBox.top + segment.boundingBox.height;
+    const withinBottomEdge = this.boundingBox.top + this.boundingBox.height >= segment.boundingBox.top && this.boundingBox.top + this.boundingBox.height <= segment.boundingBox.top + segment.boundingBox.height;
+    const shareHorizontalEdge = precisionEquality(this.boundingBox.top, segment.boundingBox.top + segment.boundingBox.height) || precisionEquality(this.boundingBox.top + this.boundingBox.height, segment.boundingBox.top);
+    const withinLeftEdge = this.boundingBox.left >= segment.boundingBox.left && this.boundingBox.left <= segment.boundingBox.left + segment.boundingBox.width;
+    const withinRightEdge = this.boundingBox.right >= segment.boundingBox.left && this.boundingBox.right <= segment.boundingBox.left + segment.boundingBox.width;
+    // console.log(shareVerticalEdge, withinTopEdge, withinBottomEdge);
+    // console.log(shareHorizontalEdge, withinLeftEdge, withinRightEdge);
+    return (shareVerticalEdge && (withinTopEdge || withinBottomEdge)) || (shareHorizontalEdge && (withinLeftEdge || withinRightEdge));
+  }
+
+  /**
+   * Removes any neighboring segment no longer touching this segment.
+   */
+  updateNeighbors() {
+    for (let direction in this.neighbors) {
+      this.neighbors[direction] = this.neighbors[direction].filter(segment => {
+        if (!this.isTouching(segment)) {
+          segment.neighbors[oppositeDirection[direction]] = segment.neighbors[oppositeDirection[direction]].filter(s => s != this);
+          return false;
+        }
+        return true;
+      });
+    }
+  }
+
+  /**
    * Resize the segment given the css style percentages.
    * @param {object} percentages An object with a percentage representation of the object's bounding box.
    */
@@ -107,6 +139,14 @@ class Segment {
     newSegment.neighbors.top = [...this.neighbors.top];
     newSegment.neighbors.right = [...this.neighbors.right];
     newSegment.neighbors.bottom = [...this.neighbors.bottom];
+
+    // Add new segment to neighboring segment's neighbors
+    for (let direction in newSegment.neighbors) {
+      newSegment.neighbors[direction].forEach(segment => {
+        segment.neighbors[oppositeDirection[direction]].push(newSegment);
+      });
+    }
+
     return newSegment;
   }
 

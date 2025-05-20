@@ -85,6 +85,8 @@ class Container {
     }
     const newSegment = segment.duplicate();
     if (type == "vertical") {
+      segment.neighbors.right.push(newSegment);
+      newSegment.neighbors.left.push(segment);
       segment.resize({
         width: newPercentages.width
       })
@@ -93,6 +95,8 @@ class Container {
         width: segmentPercentages.width - newPercentages.width
       })
     } else if (type == "horizontal") {
+      segment.neighbors.bottom.push(newSegment);
+      newSegment.neighbors.top.push(segment);
       segment.resize({
         height: newPercentages.height
       })
@@ -101,44 +105,22 @@ class Container {
         height: segmentPercentages.height - newPercentages.height
       })
     }
+    segment.updateNeighbors();
+    newSegment.updateNeighbors();
   }
 
   removeEdge() {
-    // const segment = this.focusedSegment;
-    // if (!segment) return;
+    const segment = this.focusedSegment;
+    if (!segment) return;
 
-    // const nearestEdge = segment.nearestEdge;
-    // if (nearestEdge.distance > this.settings.minPixelGap) return;
-    // console.log(nearestEdge);
-    
-    // // Find current edge and neighboring segment
-    // const segment = document.elementFromPoint(mousePos.x, mousePos.y);
-    // const segmentDimensions = segment.getBoundingClientRect();
-    // const segmentPercentages = {
-    //   width: Number(segment.style.width.slice(0, -1)),
-    //   height: Number(segment.style.height.slice(0, -1)),
-    //   left: Number(segment.style.left.slice(0, -1)),
-    //   top: Number(segment.style.top.slice(0, -1)),
-    // }
+    const nearestEdge = segment.nearestEdge;
+    if (nearestEdge.distance > this.minGap) return;
+    console.log(nearestEdge);
 
-    // if (!segment.classList.contains("segment")) {
-    //   console.log("Not a segment");
-    //   return;
-    // }
-
-    // const nearestEdge = findNearestEdge(segmentDimensions);
-    // // const minGapPercentage = minGap / 100 * containerDimensions.height
-    // // if (nearestEdge.distance > minGap) {
-    // //   console.log("Edge too far")
-    // //   return;
-    // // }
-    // const neighborSegment = findNeighbor(segment, nearestEdge.type);
-    // if (!neighborSegment) {
-    //   console.log("Not a neighboor")
-    //   return;
-    // }
-    // console.log(segment, neighborSegment);
-
-    // // Handle resizing
+    if (nearestEdge.type == "left" || nearestEdge.type == "right") {
+      segment.neighbors[nearestEdge.type].forEach(segment => {
+        console.log(segment);
+      })
+    }
   }
 }

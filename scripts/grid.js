@@ -2,7 +2,7 @@ class Grid {
   constructor (parent, element) {
     this.parent = parent;
     this.element = element;
-    this.gridMultiplier = 4;
+    this.gridMultiplier = 1;
     this.rows = 22 * this.gridMultiplier;
     this.cols = 16 * this.gridMultiplier;
     
