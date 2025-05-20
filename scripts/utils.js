@@ -1,4 +1,4 @@
-function precisionEquality(n1, n2, epsilon=0.0001) {
+function precisionEquality(n1, n2, epsilon=0.1) {
     return Math.abs(n1 - n2) < epsilon;
 }
 

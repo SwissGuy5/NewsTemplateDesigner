@@ -85,6 +85,20 @@ class Segment {
   }
 
   /**
+   * Checks wether the cursor is positioned within this segment.
+   * @param {number} x The relative x position of the cursor to the container.
+   * @param {number} y The relative y position of the cursor to the container.
+   * @returns {boolean} True if positioned within, false otherwise.
+   */
+  includesCursorPos(x, y) {
+    if (this.boundingBox.left < x && this.boundingBox.top < y && this.boundingBox.left + this.boundingBox.width > x && this.boundingBox.top + this.boundingBox.height > y) {
+      return true;
+    }
+    return false;
+  }
+
+  // Todo: Fix issue with corners
+  /**
    * Checks wether two segments are adjacent without using the neighbor property.
    * @param {Segment} segment The segment to test against.
    * @returns {boolean} True if segments touch, false otherwise.
@@ -95,10 +109,22 @@ class Segment {
     const withinBottomEdge = this.boundingBox.top + this.boundingBox.height >= segment.boundingBox.top && this.boundingBox.top + this.boundingBox.height <= segment.boundingBox.top + segment.boundingBox.height;
     const shareHorizontalEdge = precisionEquality(this.boundingBox.top, segment.boundingBox.top + segment.boundingBox.height) || precisionEquality(this.boundingBox.top + this.boundingBox.height, segment.boundingBox.top);
     const withinLeftEdge = this.boundingBox.left >= segment.boundingBox.left && this.boundingBox.left <= segment.boundingBox.left + segment.boundingBox.width;
-    const withinRightEdge = this.boundingBox.right >= segment.boundingBox.left && this.boundingBox.right <= segment.boundingBox.left + segment.boundingBox.width;
-    // console.log(shareVerticalEdge, withinTopEdge, withinBottomEdge);
-    // console.log(shareHorizontalEdge, withinLeftEdge, withinRightEdge);
+    const withinRightEdge = this.boundingBox.left + this.boundingBox.width >= segment.boundingBox.left && this.boundingBox.left + this.boundingBox.width <= segment.boundingBox.left + segment.boundingBox.width;
+    // console.log(shareVerticalEdge, withinTopEdge || withinBottomEdge);
+    // console.log(shareHorizontalEdge, withinLeftEdge || withinRightEdge);
     return (shareVerticalEdge && (withinTopEdge || withinBottomEdge)) || (shareHorizontalEdge && (withinLeftEdge || withinRightEdge));
+  }
+
+  /**
+   * Adds on the neighbors of another segment.
+   * @param {object} neighbors The neighbor object of another segment.
+   */
+  addNeighbors(neighbors) {
+    for (let direction in this.neighbors) {
+      neighbors[direction].forEach(neighbor => {
+        if (this.neighbors[direction].every(segment => segment != neighbor)) this.neighbors[direction].push(neighbor);
+      })
+    }
   }
 
   /**
@@ -117,14 +143,25 @@ class Segment {
   }
 
   /**
+   * Called when deleting a segment, removes itself as a neighbor of all its neighbors
+   */
+  removeFromNeighbors() {
+    for (let direction in this.neighbors) {
+      this.neighbors[direction].forEach(segment => {
+        segment.neighbors[oppositeDirection[direction]] = segment.neighbors[oppositeDirection[direction]].filter(s => s != this);
+      });
+    }
+  }
+
+  /**
    * Resize the segment given the css style percentages.
    * @param {object} percentages An object with a percentage representation of the object's bounding box.
    */
   resize(percentages) {
-    if (percentages.left) this.element.style.left = `${percentages.left}%`;
-    if (percentages.top) this.element.style.top = `${percentages.top}%`;
-    if (percentages.width) this.element.style.width = `${percentages.width}%`;
-    if (percentages.height) this.element.style.height = `${percentages.height}%`;
+    if (percentages.left != null) this.element.style.left = `${percentages.left}%`;
+    if (percentages.top != null) this.element.style.top = `${percentages.top}%`;
+    if (percentages.width != null) this.element.style.width = `${percentages.width}%`;
+    if (percentages.height != null) this.element.style.height = `${percentages.height}%`;
     this.boundingBox = this.getRelativeBoundingBox();
   }
   
@@ -148,18 +185,5 @@ class Segment {
     }
 
     return newSegment;
-  }
-
-  /**
-   * Checks wether the cursor is positioned within this segment.
-   * @param {number} x The relative x position of the cursor to the container.
-   * @param {number} y The relative y position of the cursor to the container.
-   * @returns {boolean} True if positioned within, false otherwise.
-   */
-  includesCursorPos(x, y) {
-    if (this.boundingBox.left < x && this.boundingBox.top < y && this.boundingBox.left + this.boundingBox.width > x && this.boundingBox.top + this.boundingBox.height > y) {
-      return true;
-    }
-    return false;
   }
 }

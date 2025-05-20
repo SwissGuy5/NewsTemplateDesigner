@@ -48,14 +48,13 @@ class Container {
     const newSegment = new Segment(this, newElement);
     this.element.appendChild(newElement);
     this.segments.push(newSegment);
-
-    // // Keep the sorted order on the x axis.
-    // this.segments.forEach((segment, i) => {
-    //   if (newSegment < segment.boundingBox.x) {
-    //     this.segments.splice(i, 0, newSegment);
-    //   }
-    // })
     return newSegment;
+  }
+
+  removeSegment(segment) {
+    this.segments = this.segments.filter(s => s != segment);
+    segment.removeFromNeighbors();
+    segment.element.remove();
   }
 
   /**
@@ -112,15 +111,26 @@ class Container {
   removeEdge() {
     const segment = this.focusedSegment;
     if (!segment) return;
-
+    
     const nearestEdge = segment.nearestEdge;
     if (nearestEdge.distance > this.minGap) return;
-    console.log(nearestEdge);
-
-    if (nearestEdge.type == "left" || nearestEdge.type == "right") {
-      segment.neighbors[nearestEdge.type].forEach(segment => {
-        console.log(segment);
-      })
+    
+    // Detect which edge to remove
+    if (segment.neighbors[nearestEdge.type].length == 1 && segment.neighbors[nearestEdge.type][0].neighbors[oppositeDirection[nearestEdge.type]].length == 1) {
+      // delete if both segments align perfectly
+      const neighborSegment = segment.neighbors[nearestEdge.type][0];
+      const neighborPercentages = neighborSegment.percentages;
+      const segmentPercentages = segment.percentages;
+      const newPercentages = {
+        left: Math.min(neighborPercentages.left, segmentPercentages.left),
+        top: Math.min(neighborPercentages.top, segmentPercentages.top),
+        width: (nearestEdge.type == "left" || nearestEdge.type == "right") ? neighborPercentages.width + segmentPercentages.width : segmentPercentages.width,
+        height: (nearestEdge.type == "top" || nearestEdge.type == "bottom") ? neighborPercentages.height + segmentPercentages.height : segmentPercentages.height
+      }
+      neighborSegment.resize(newPercentages);
+      neighborSegment.addNeighbors(segment.neighbors);
+      this.removeSegment(segment);
+      neighborSegment.updateNeighbors();
     }
   }
 }
