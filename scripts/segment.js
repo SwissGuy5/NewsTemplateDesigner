@@ -97,7 +97,7 @@ class Segment {
     return false;
   }
 
-  // Todo: Fix issue with corners
+  // Todo: Fix issue with corners and segment that doesn't reach any sides, fix within detection
   /**
    * Checks wether two segments are adjacent without using the neighbor property.
    * @param {Segment} segment The segment to test against.
@@ -105,14 +105,14 @@ class Segment {
    */
   isTouching(segment) {
     const shareVerticalEdge = precisionEquality(this.boundingBox.left, segment.boundingBox.left + segment.boundingBox.width) || precisionEquality(this.boundingBox.left + this.boundingBox.width, segment.boundingBox.left);
-    const withinTopEdge = this.boundingBox.top >= segment.boundingBox.top && this.boundingBox.top <= segment.boundingBox.top + segment.boundingBox.height;
-    const withinBottomEdge = this.boundingBox.top + this.boundingBox.height >= segment.boundingBox.top && this.boundingBox.top + this.boundingBox.height <= segment.boundingBox.top + segment.boundingBox.height;
+    const withinTopEdge = this.boundingBox.top >= segment.boundingBox.top && this.boundingBox.top < segment.boundingBox.top + segment.boundingBox.height;
+    const withinYMiddleEdge = this.boundingBox.top < segment.boundingBox.top && this.boundingBox.top + this.boundingBox.height > segment.boundingBox.top + segment.boundingBox.height;
+    const withinBottomEdge = this.boundingBox.top + this.boundingBox.height > segment.boundingBox.top && this.boundingBox.top + this.boundingBox.height <= segment.boundingBox.top + segment.boundingBox.height;
     const shareHorizontalEdge = precisionEquality(this.boundingBox.top, segment.boundingBox.top + segment.boundingBox.height) || precisionEquality(this.boundingBox.top + this.boundingBox.height, segment.boundingBox.top);
-    const withinLeftEdge = this.boundingBox.left >= segment.boundingBox.left && this.boundingBox.left <= segment.boundingBox.left + segment.boundingBox.width;
-    const withinRightEdge = this.boundingBox.left + this.boundingBox.width >= segment.boundingBox.left && this.boundingBox.left + this.boundingBox.width <= segment.boundingBox.left + segment.boundingBox.width;
-    // console.log(shareVerticalEdge, withinTopEdge || withinBottomEdge);
-    // console.log(shareHorizontalEdge, withinLeftEdge || withinRightEdge);
-    return (shareVerticalEdge && (withinTopEdge || withinBottomEdge)) || (shareHorizontalEdge && (withinLeftEdge || withinRightEdge));
+    const withinLeftEdge = this.boundingBox.left >= segment.boundingBox.left && this.boundingBox.left < segment.boundingBox.left + segment.boundingBox.width;
+    const withinXMiddleEdge = this.boundingBox.left < segment.boundingBox.left && this.boundingBox.left + this.boundingBox.width > segment.boundingBox.left + segment.boundingBox.width;
+    const withinRightEdge = this.boundingBox.left + this.boundingBox.width > segment.boundingBox.left && this.boundingBox.left + this.boundingBox.width <= segment.boundingBox.left + segment.boundingBox.width;
+    return (shareVerticalEdge && (withinTopEdge || withinYMiddleEdge || withinBottomEdge)) || (shareHorizontalEdge && (withinLeftEdge || withinXMiddleEdge || withinRightEdge));
   }
 
   /**
