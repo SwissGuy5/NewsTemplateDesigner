@@ -2,7 +2,7 @@ class Segment {
   /**
    * A segment partitioning the container's space.
    * @param {Container} parent The parent container object.
-   * @param {element} element Reference to the DOM element.
+   * @param {Element} element Reference to the DOM element.
    */
   constructor (parent, element, dimensions) {
     this.parent = parent;
@@ -10,6 +10,10 @@ class Segment {
     this.dimensions = dimensions;
   }
 
+  /**
+   * Converts the dimensions into percentages, used for rendering
+   * @returns {Object} An object with a percentages for each cardinal direction
+   */
   get normalisedPercentages() {
     const rows = this.parent.grid.rows;
     const cols = this.parent.grid.cols;
@@ -22,6 +26,10 @@ class Segment {
     }
   }
 
+  /**
+   * Returns the grid coordinate of each edge.
+   * @returns {Object} An object with the coordinates of each edge
+   */
   get edges() {
     return {
       left: this.dimensions.left,
@@ -31,6 +39,9 @@ class Segment {
     }
   }
 
+  /**
+   * @returns {Object} Returns the distance to the nearest horizontal and vertical edges
+   */
   get nearestEdge() {
     let nearestEdgeX = {
       distance: Infinity,
@@ -72,7 +83,7 @@ class Segment {
 
   // /**
   //  * Calculates the relative bounding box, excluding all pixels outside the container.
-  //  * @returns {object} The relative pixel bounding box.
+  //  * @returns {Object} The relative pixel bounding box.
   //  */
   // getRelativeBoundingBox() {
   //   const containerBoundingBox = this.parent.element.getBoundingClientRect();
@@ -100,25 +111,25 @@ class Segment {
 
   /**
    * Checks wether two segments are adjacent without using the neighbor property.
-   * @param { Segment } segment The segment to test against.
-   * @returns { boolean } True if segments touch, false otherwise.
+   * @param {Segment} segment The segment to test against.
+   * @returns {boolean} True if segments touch, false otherwise.
    */
   isTouching(segment) {
     const a = this.dimensions;
     const b = segment.dimensions;
 
-    const shareVerticalEdge = precisionEquality(a.left + a.width, b.left) || precisionEquality(a.left, b.left + b.width);
-    const verticalOverlap = round(a.top) < round(b.top + b.height) && round(a.top + a.height) > round(b.top);
+    const shareVerticalEdge = a.left + a.width == b.left || a.left == b.left + b.width;
+    const verticalOverlap = a.top < b.top + b.height && a.top + a.height > b.top;
 
-    const shareHorizontalEdge = precisionEquality(a.top + a.height, b.top) || precisionEquality(a.top, b.top + b.height);
-    const horizontalOverlap = round(a.left) < round(b.left + b.width) && round(a.left + a.width) > round(b.left);
+    const shareHorizontalEdge = a.top + a.height == b.top || a.top == b.top + b.height;
+    const horizontalOverlap = a.left < b.left + b.width && a.left + a.width > b.left;
 
     return (shareVerticalEdge && verticalOverlap) || (shareHorizontalEdge && horizontalOverlap);
   }
 
   /**
    * Resize the segment given the css style percentages.
-   * @param {object} normalised An object with a percentage representation of the object's bounding box.
+   * @param {Object} normalised An object with a percentage representation of the object's bounding box.
    */
   resize(newDimensions) {
     this.dimensions = {
@@ -135,7 +146,7 @@ class Segment {
   
   /**
    * Creates a hard copy of the current segment.
-   * @returns A reference to the newly made hard-copy of the segment.
+   * @returns {Segment} A reference to the newly made hard-copy of the segment.
    */
   duplicate() {
     const newElement = this.element.cloneNode(false);

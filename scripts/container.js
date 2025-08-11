@@ -1,8 +1,9 @@
 class Container {
   /**
    * The container representing an A4 page.
-   * @param {element} container The DOM container element.
+   * @param {Container} container The DOM container element.
    * @param {Array<Segment>} segments An optional list of existing segments.
+   * @param {Element} gridElement The DOM grid element.
    */
   constructor (containerElement, firstSegmentElement, gridElement) {
     this.element = containerElement || document.getElementById("container");
@@ -11,15 +12,25 @@ class Container {
     this.inputHandler = new InputHandler(this);
   }
 
+  /**
+   * @returns {Object} Returns the container's boundingClientRect
+   */
   get boundingBox() {
     return this.element.getBoundingClientRect();
   }
 
+  /**
+   * @returns {Object} Returns the segment currently hovered over by the cursor
+   */
   get focusedSegment() {
     return this.findSegment(this.inputHandler.gridMousePos.x, this.inputHandler.gridMousePos.y);
   }
 
-  // TODO: Revisit, remove precision equality, rename vars
+  /**
+   * Returns all segments that touch one of the main segments sides.
+   * @param {Segment} segment The main segment for which we find neighbors.
+   * @returns {Object<Array>} An object with neighbor arrays for each cardinal direction.
+   */
   getNeighbors(segment) {
     let neighbors = { left: [], right: [], top: [], bottom: [] };
     const s1 = segment.dimensions;
@@ -53,6 +64,12 @@ class Container {
     return foundSegment;
   }
 
+  /**
+   * Creates a new segment given dimensions and adds it to the segments array.
+   * @param {Element} newElement The DOM display element
+   * @param {Object} dimensions The grid dimensions of the new segment
+   * @returns {Segment} The new segment
+   */
   addSegment(newElement, dimensions) {
     const newSegment = new Segment(this, newElement, dimensions);
     this.element.appendChild(newElement);
@@ -60,6 +77,10 @@ class Container {
     return newSegment;
   }
 
+  /**
+   * Removes the given segment from the segments array and deletes its DOM element.
+   * @param {Segment} segment The segment to remove
+   */
   removeSegment(segment) {
     this.segments = this.segments.filter(s => s != segment);
     segment.element.remove();
@@ -75,7 +96,6 @@ class Container {
 
     // If new edge is too close to existing edge
     const nearestEdge = segment.nearestEdge[type];
-    console.log(nearestEdge)
     if (nearestEdge.distance < this.grid.gridMinGap) return;
     
     // Get dimensions and snap to grid
@@ -106,11 +126,16 @@ class Container {
     }
   }
 
+  /**
+   * Removes an edge based on the current mouse position.
+   */
   removeEdge() {
     const segment = this.focusedSegment;
     if (!segment) return;
     
-    const nearestEdge = segment.nearestEdge;
+    const nearestEdges = segment.nearestEdge;
+    let nearestEdge = nearestEdges.horizontal;
+    if (nearestEdge.distance > nearestEdges.vertical.distance) nearestEdge = nearestEdges.vertical;
     if (nearestEdge.distance > this.grid.gridMinGap) return;
 
     const neighbors = this.getNeighbors(segment);
@@ -118,7 +143,6 @@ class Container {
     // Detect which edge to remove and delete if both segments align perfectly (check if single neighbor and is single neighbor of neighbor)
     if (neighbors[nearestEdge.type].length == 1 && this.getNeighbors(neighbors[nearestEdge.type][0])[oppositeDirection[nearestEdge.type]].length == 1) {
       const neighborSegment = neighbors[nearestEdge.type][0];
-      console.log(neighborSegment)
       const neighborDimensions = neighborSegment.dimensions;
       const segmentDimensions = segment.dimensions;
       const newPercentages = {

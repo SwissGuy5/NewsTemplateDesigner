@@ -13,6 +13,7 @@ class InputHandler {
 
   /**
    * Get the mouse position as gridCoordinates
+   * @returns {Object} The x & y grid coordinates
    */
   get gridMousePos() {
     const boundingBox = this.container.boundingBox;
