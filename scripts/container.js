@@ -26,7 +26,28 @@ class Container {
     return this.grid.minGap;
   }
 
-  // Relative x and y pixel displacement
+  getNeighbors(segment) {
+    let neighbors = { left: [], right: [], top: [], bottom: [] };
+    const segmentPercentages = segment.percentages;
+    console.log(segmentPercentages)
+    this.segments.forEach((segment2, i) => {
+      if (segment.isTouching(segment2) && segment != segment2) {
+        const segment2Percentages = segment2.percentages;
+
+        // if (precisionEquality(segment.boundingBox.left, segment2.boundingBox.left + segment2.boundingBox.width)) neighbors.left.push(segment2);
+        // if (precisionEquality(segment.boundingBox.left + segment.boundingBox.width, segment2.boundingBox.left)) neighbors.right.push(segment2);
+        // if (precisionEquality(segment.boundingBox.top, segment2.boundingBox.top + segment2.boundingBox.height)) neighbors.top.push(segment2);
+        // if (precisionEquality(segment.boundingBox.top + segment.boundingBox.height, segment2.boundingBox.top)) neighbors.bottom.push(segment2);
+
+        if (precisionEquality(segmentPercentages.left, segment2Percentages.left + segment2Percentages.width)) neighbors.left.push(segment2);
+        if (precisionEquality(segmentPercentages.left + segmentPercentages.width, segment2Percentages.left)) neighbors.right.push(segment2);
+        if (precisionEquality(segmentPercentages.top, segment2Percentages.top + segment2Percentages.height)) neighbors.top.push(segment2);
+        if (precisionEquality(segmentPercentages.top + segmentPercentages.height, segment2Percentages.top)) neighbors.bottom.push(segment2);
+      }
+    })
+    return neighbors;
+  }
+
   /**
    * Locates a segment given the cursor's position.
    * @param {number} x The relative x position of the cursor to the container.
@@ -53,7 +74,6 @@ class Container {
 
   removeSegment(segment) {
     this.segments = this.segments.filter(s => s != segment);
-    segment.removeFromNeighbors();
     segment.element.remove();
   }
 
@@ -84,8 +104,6 @@ class Container {
     }
     const newSegment = segment.duplicate();
     if (type == "vertical") {
-      segment.neighbors.right.push(newSegment);
-      newSegment.neighbors.left.push(segment);
       segment.resize({
         width: newPercentages.width
       })
@@ -94,8 +112,6 @@ class Container {
         width: segmentPercentages.width - newPercentages.width
       })
     } else if (type == "horizontal") {
-      segment.neighbors.bottom.push(newSegment);
-      newSegment.neighbors.top.push(segment);
       segment.resize({
         height: newPercentages.height
       })
@@ -104,8 +120,6 @@ class Container {
         height: segmentPercentages.height - newPercentages.height
       })
     }
-    segment.updateNeighbors();
-    newSegment.updateNeighbors();
   }
 
   removeEdge() {
@@ -114,11 +128,14 @@ class Container {
     
     const nearestEdge = segment.nearestEdge;
     if (nearestEdge.distance > this.minGap) return;
+    console.log(nearestEdge)
+
+    const neighbors = this.getNeighbors(segment);
+    console.log(neighbors);
     
-    // Detect which edge to remove
-    if (segment.neighbors[nearestEdge.type].length == 1 && segment.neighbors[nearestEdge.type][0].neighbors[oppositeDirection[nearestEdge.type]].length == 1) {
-      // delete if both segments align perfectly
-      const neighborSegment = segment.neighbors[nearestEdge.type][0];
+    // Detect which edge to remove and delete if both segments align perfectly (check if single neighbor and is single neighbor of neighbor)
+    if (neighbors[nearestEdge.type].length == 1 && this.getNeighbors(neighbors[nearestEdge.type][0])[oppositeDirection[nearestEdge.type]].length == 1) {
+      const neighborSegment = neighbors[nearestEdge.type][0];
       const neighborPercentages = neighborSegment.percentages;
       const segmentPercentages = segment.percentages;
       const newPercentages = {
@@ -128,9 +145,7 @@ class Container {
         height: (nearestEdge.type == "top" || nearestEdge.type == "bottom") ? neighborPercentages.height + segmentPercentages.height : segmentPercentages.height
       }
       neighborSegment.resize(newPercentages);
-      neighborSegment.addNeighbors(segment.neighbors);
       this.removeSegment(segment);
-      neighborSegment.updateNeighbors();
     }
   }
 }

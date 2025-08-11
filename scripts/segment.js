@@ -8,12 +8,6 @@ class Segment {
     this.parent = parent;
     this.element = element;
     this.boundingBox = this.getRelativeBoundingBox(parent);
-    this.neighbors = {
-      left: [],
-      top: [],
-      right: [],
-      bottom: []
-    };
   }
 
   get edges() {
@@ -97,60 +91,58 @@ class Segment {
     return false;
   }
 
-  // Todo: Fix issue with corners and segment that doesn't reach any sides, fix within detection
-  /**
-   * Checks wether two segments are adjacent without using the neighbor property.
-   * @param {Segment} segment The segment to test against.
-   * @returns {boolean} True if segments touch, false otherwise.
-   */
-  isTouching(segment) {
-    const shareVerticalEdge = precisionEquality(this.boundingBox.left, segment.boundingBox.left + segment.boundingBox.width) || precisionEquality(this.boundingBox.left + this.boundingBox.width, segment.boundingBox.left);
-    const withinTopEdge = this.boundingBox.top >= segment.boundingBox.top && this.boundingBox.top < segment.boundingBox.top + segment.boundingBox.height;
-    const withinYMiddleEdge = this.boundingBox.top < segment.boundingBox.top && this.boundingBox.top + this.boundingBox.height > segment.boundingBox.top + segment.boundingBox.height;
-    const withinBottomEdge = this.boundingBox.top + this.boundingBox.height > segment.boundingBox.top && this.boundingBox.top + this.boundingBox.height <= segment.boundingBox.top + segment.boundingBox.height;
-    const shareHorizontalEdge = precisionEquality(this.boundingBox.top, segment.boundingBox.top + segment.boundingBox.height) || precisionEquality(this.boundingBox.top + this.boundingBox.height, segment.boundingBox.top);
-    const withinLeftEdge = this.boundingBox.left >= segment.boundingBox.left && this.boundingBox.left < segment.boundingBox.left + segment.boundingBox.width;
-    const withinXMiddleEdge = this.boundingBox.left < segment.boundingBox.left && this.boundingBox.left + this.boundingBox.width > segment.boundingBox.left + segment.boundingBox.width;
-    const withinRightEdge = this.boundingBox.left + this.boundingBox.width > segment.boundingBox.left && this.boundingBox.left + this.boundingBox.width <= segment.boundingBox.left + segment.boundingBox.width;
+  isTouchingPercentages(segment2) {
+    const segmentPercentages = this.percentages;
+    const segment2Percentages = segment2.percentages;
+
+    const shareVerticalEdge = segmentPercentages.left == segment2Percentages.left + segment2Percentages.width || segmentPercentages.left + segmentPercentages.width == segment2Percentages.left;
+    const withinTopEdge = segmentPercentages.top >= segment2Percentages.top && segmentPercentages.top < segment2Percentages.top + segment2Percentages.height;
+    const withinYMiddleEdge = segmentPercentages.top < segment2Percentages.top && segmentPercentages.top + segmentPercentages.height > segment2Percentages.top + segment2Percentages.height;
+    const withinBottomEdge = segmentPercentages.top + segmentPercentages.height > segment2Percentages.top && segmentPercentages.top + segmentPercentages.height <= segment2Percentages.top + segment2Percentages.height;
+    // console.log(segment2, shareVerticalEdge, withinTopEdge, withinYMiddleEdge, withinBottomEdge)
+    
+    const shareHorizontalEdge = segmentPercentages.top == segment2Percentages.top + segment2Percentages.height || segmentPercentages.top + segmentPercentages.height == segment2Percentages.top;
+    const withinLeftEdge = segmentPercentages.left >= segment2Percentages.left && segmentPercentages.left < segment2Percentages.left + segment2Percentages.width;
+    const withinXMiddleEdge = segmentPercentages.left < segment2Percentages.left && segmentPercentages.left + segmentPercentages.width > segment2Percentages.left + segment2Percentages.width;
+    const withinRightEdge = segmentPercentages.left + segmentPercentages.width > segment2Percentages.left && segmentPercentages.left + segmentPercentages.width <= segment2Percentages.left + segment2Percentages.width;
+    
     return (shareVerticalEdge && (withinTopEdge || withinYMiddleEdge || withinBottomEdge)) || (shareHorizontalEdge && (withinLeftEdge || withinXMiddleEdge || withinRightEdge));
   }
 
   /**
-   * Adds on the neighbors of another segment.
-   * @param {object} neighbors The neighbor object of another segment.
+   * Checks wether two segments are adjacent without using the neighbor property.
+   * @param {Segment} segment The segment to test against.
+   * @returns {boolean} True if segments touch, false otherwise.
+   * ! This function is not always precise. False positives occur.
    */
-  addNeighbors(neighbors) {
-    for (let direction in this.neighbors) {
-      neighbors[direction].forEach(neighbor => {
-        if (this.neighbors[direction].every(segment => segment != neighbor)) this.neighbors[direction].push(neighbor);
-      })
-    }
-  }
+  isTouching(segment) {
+    const a = this.boundingBox;
+    const b = segment.boundingBox;
 
-  /**
-   * Removes any neighboring segment no longer touching this segment.
-   */
-  updateNeighbors() {
-    for (let direction in this.neighbors) {
-      this.neighbors[direction] = this.neighbors[direction].filter(segment => {
-        if (!this.isTouching(segment)) {
-          segment.neighbors[oppositeDirection[direction]] = segment.neighbors[oppositeDirection[direction]].filter(s => s != this);
-          return false;
-        }
-        return true;
-      });
-    }
-  }
+    const shareVerticalEdge = precisionEquality(a.left + a.width, b.left) || precisionEquality(a.left, b.left + b.width);
+    const verticalOverlap = round(a.top) < round(b.top + b.height) && round(a.top + a.height) > round(b.top);
 
-  /**
-   * Called when deleting a segment, removes itself as a neighbor of all its neighbors
-   */
-  removeFromNeighbors() {
-    for (let direction in this.neighbors) {
-      this.neighbors[direction].forEach(segment => {
-        segment.neighbors[oppositeDirection[direction]] = segment.neighbors[oppositeDirection[direction]].filter(s => s != this);
-      });
-    }
+    const shareHorizontalEdge = precisionEquality(a.top + a.height, b.top) || precisionEquality(a.top, b.top + b.height);
+    const horizontalOverlap = round(a.left) < round(b.left + b.width) && round(a.left + a.width) > round(b.left);
+
+    console.log( segment, 
+      round(a.left) < round(b.left + b.width) &&
+      round(a.left + a.width) > round(b.left) &&
+      round(a.top) < round(b.top + b.height) &&
+      round(a.top + a.height) > round(b.top)
+    );
+
+    return (shareVerticalEdge && verticalOverlap) || (shareHorizontalEdge && horizontalOverlap);
+
+    // const shareVerticalEdge = precisionEquality(this.boundingBox.left, segment.boundingBox.left + segment.boundingBox.width) || precisionEquality(this.boundingBox.left + this.boundingBox.width, segment.boundingBox.left);
+    // const withinTopEdge = this.boundingBox.top >= segment.boundingBox.top && this.boundingBox.top < segment.boundingBox.top + segment.boundingBox.height;
+    // const withinYMiddleEdge = this.boundingBox.top < segment.boundingBox.top && this.boundingBox.top + this.boundingBox.height > segment.boundingBox.top + segment.boundingBox.height;
+    // const withinBottomEdge = this.boundingBox.top + this.boundingBox.height > segment.boundingBox.top && this.boundingBox.top + this.boundingBox.height <= segment.boundingBox.top + segment.boundingBox.height;
+    // const shareHorizontalEdge = precisionEquality(this.boundingBox.top, segment.boundingBox.top + segment.boundingBox.height) || precisionEquality(this.boundingBox.top + this.boundingBox.height, segment.boundingBox.top);
+    // const withinLeftEdge = this.boundingBox.left >= segment.boundingBox.left && this.boundingBox.left < segment.boundingBox.left + segment.boundingBox.width;
+    // const withinXMiddleEdge = this.boundingBox.left < segment.boundingBox.left && this.boundingBox.left + this.boundingBox.width > segment.boundingBox.left + segment.boundingBox.width;
+    // const withinRightEdge = this.boundingBox.left + this.boundingBox.width > segment.boundingBox.left && this.boundingBox.left + this.boundingBox.width <= segment.boundingBox.left + segment.boundingBox.width;
+    // return (shareVerticalEdge && (withinTopEdge || withinYMiddleEdge || withinBottomEdge)) || (shareHorizontalEdge && (withinLeftEdge || withinXMiddleEdge || withinRightEdge));
   }
 
   /**
@@ -172,17 +164,6 @@ class Segment {
   duplicate() {
     const newElement = this.element.cloneNode(false);
     const newSegment = this.parent.addSegment(newElement);
-    newSegment.neighbors.left = [...this.neighbors.left];
-    newSegment.neighbors.top = [...this.neighbors.top];
-    newSegment.neighbors.right = [...this.neighbors.right];
-    newSegment.neighbors.bottom = [...this.neighbors.bottom];
-
-    // Add new segment to neighboring segment's neighbors
-    for (let direction in newSegment.neighbors) {
-      newSegment.neighbors[direction].forEach(segment => {
-        segment.neighbors[oppositeDirection[direction]].push(newSegment);
-      });
-    }
 
     return newSegment;
   }

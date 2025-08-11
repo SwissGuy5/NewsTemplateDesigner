@@ -3,6 +3,7 @@ body {
   justify-content: center;
   align-items: center;
   background-color: lightgray;
+  box-sizing: border-box
 }
 .a4 {
   width: 70.7vh;
