@@ -11,6 +11,9 @@ class InputHandler {
     this.setListeners();
   }
 
+  /**
+   * Get the mouse position as gridCoordinates
+   */
   get gridMousePos() {
     const boundingBox = this.container.boundingBox;
     const relativeX = this.mousePos.x - boundingBox.left;
@@ -22,17 +25,9 @@ class InputHandler {
     }
   }
 
-  get normalisedMousePos() {
-    const boundingBox = this.container.boundingBox;
-    const relativeX = this.mousePos.x - boundingBox.left;
-    const relativeY = this.mousePos.y - boundingBox.top;
-
-    return {
-      x: relativeX / boundingBox.width,
-      y: relativeY / boundingBox.height
-    }
-  }
-
+  /**
+   * Initiate input listeners
+   */
   setListeners() {
     document.addEventListener("mousemove", e => {
       this.mousePos = {

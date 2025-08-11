@@ -22,15 +22,15 @@ class Container {
   // TODO: Revisit, remove precision equality, rename vars
   getNeighbors(segment) {
     let neighbors = { left: [], right: [], top: [], bottom: [] };
-    const segmentNBB = segment.dimensions;
+    const s1 = segment.dimensions;
     this.segments.forEach((segment2, i) => {
       if (segment.isTouching(segment2) && segment != segment2) {
-        const segment2NBB = segment2.dimensions;
+        const s2 = segment2.dimensions;
         
-        if (precisionEquality(segmentNBB.left, segment2NBB.left + segment2NBB.width)) neighbors.left.push(segment2);
-        if (precisionEquality(segmentNBB.left + segmentNBB.width, segment2NBB.left)) neighbors.right.push(segment2);
-        if (precisionEquality(segmentNBB.top, segment2NBB.top + segment2NBB.height)) neighbors.top.push(segment2);
-        if (precisionEquality(segmentNBB.top + segmentNBB.height, segment2NBB.top)) neighbors.bottom.push(segment2);
+        if (s1.left == s2.left + s2.width) neighbors.left.push(segment2);
+        if (s1.left + s1.width == s2.left) neighbors.right.push(segment2);
+        if (s1.top == s2.top + s2.height) neighbors.top.push(segment2);
+        if (s1.top + s1.height == s2.top) neighbors.bottom.push(segment2);
       }
     })
     return neighbors;
@@ -74,7 +74,8 @@ class Container {
     if (!segment) return;
 
     // If new edge is too close to existing edge
-    const nearestEdge = segment.nearestEdge;
+    const nearestEdge = segment.nearestEdge[type];
+    console.log(nearestEdge)
     if (nearestEdge.distance < this.grid.gridMinGap) return;
     
     // Get dimensions and snap to grid
@@ -113,19 +114,18 @@ class Container {
     if (nearestEdge.distance > this.grid.gridMinGap) return;
 
     const neighbors = this.getNeighbors(segment);
-    console.log(neighbors);
     
     // Detect which edge to remove and delete if both segments align perfectly (check if single neighbor and is single neighbor of neighbor)
     if (neighbors[nearestEdge.type].length == 1 && this.getNeighbors(neighbors[nearestEdge.type][0])[oppositeDirection[nearestEdge.type]].length == 1) {
       const neighborSegment = neighbors[nearestEdge.type][0];
       console.log(neighborSegment)
-      const neighborPercentages = neighborSegment.dimensions;
-      const segmentPercentages = segment.dimensions;
+      const neighborDimensions = neighborSegment.dimensions;
+      const segmentDimensions = segment.dimensions;
       const newPercentages = {
-        left: Math.min(neighborPercentages.left, segmentPercentages.left),
-        top: Math.min(neighborPercentages.top, segmentPercentages.top),
-        width: (nearestEdge.type == "left" || nearestEdge.type == "right") ? neighborPercentages.width + segmentPercentages.width : segmentPercentages.width,
-        height: (nearestEdge.type == "top" || nearestEdge.type == "bottom") ? neighborPercentages.height + segmentPercentages.height : segmentPercentages.height
+        left: Math.min(neighborDimensions.left, segmentDimensions.left),
+        top: Math.min(neighborDimensions.top, segmentDimensions.top),
+        width: (nearestEdge.type == "left" || nearestEdge.type == "right") ? neighborDimensions.width + segmentDimensions.width : segmentDimensions.width,
+        height: (nearestEdge.type == "top" || nearestEdge.type == "bottom") ? neighborDimensions.height + segmentDimensions.height : segmentDimensions.height
       }
       neighborSegment.resize(newPercentages);
       this.removeSegment(segment);

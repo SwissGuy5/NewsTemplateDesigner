@@ -32,38 +32,42 @@ class Segment {
   }
 
   get nearestEdge() {
-    let nearestEdge = {
+    let nearestEdgeX = {
+      distance: Infinity,
+      type: null
+    };
+    let nearestEdgeY = {
       distance: Infinity,
       type: null
     };
     const edges = this.edges;
     const gridMousePos = this.parent.inputHandler.gridMousePos;
 
-    if (Math.abs(edges.left - gridMousePos.x) < nearestEdge.distance) {
-      nearestEdge = {
+    if (Math.abs(edges.left - gridMousePos.x) < nearestEdgeX.distance) {
+      nearestEdgeX = {
         distance: Math.abs(edges.left - gridMousePos.x),
         type: "left"
       }
     }
-    if (Math.abs(edges.top - gridMousePos.y) < nearestEdge.distance) {
-      nearestEdge = {
+    if (Math.abs(edges.top - gridMousePos.y) < nearestEdgeY.distance) {
+      nearestEdgeY = {
         distance: Math.abs(edges.top - gridMousePos.y),
         type: "top"
       }
     }
-    if (Math.abs(edges.right - gridMousePos.x) < nearestEdge.distance) {
-      nearestEdge = {
+    if (Math.abs(edges.right - gridMousePos.x) < nearestEdgeX.distance) {
+      nearestEdgeX = {
         distance: Math.abs(edges.right - gridMousePos.x),
         type: "right"
       }
     }
-    if (Math.abs(edges.bottom - gridMousePos.y) < nearestEdge.distance) {
-      nearestEdge = {
+    if (Math.abs(edges.bottom - gridMousePos.y) < nearestEdgeY.distance) {
+      nearestEdgeY = {
         distance: Math.abs(edges.bottom - gridMousePos.y),
         type: "bottom"
       }
     }
-    return nearestEdge;
+    return { vertical: nearestEdgeX, horizontal: nearestEdgeY };
   }
 
   // /**
@@ -98,7 +102,6 @@ class Segment {
    * Checks wether two segments are adjacent without using the neighbor property.
    * @param { Segment } segment The segment to test against.
    * @returns { boolean } True if segments touch, false otherwise.
-   * ! This function is not always precise. False positives occur.
    */
   isTouching(segment) {
     const a = this.dimensions;
@@ -109,13 +112,6 @@ class Segment {
 
     const shareHorizontalEdge = precisionEquality(a.top + a.height, b.top) || precisionEquality(a.top, b.top + b.height);
     const horizontalOverlap = round(a.left) < round(b.left + b.width) && round(a.left + a.width) > round(b.left);
-
-    // console.log( segment, 
-    //   round(a.left) < round(b.left + b.width) &&
-    //   round(a.left + a.width) > round(b.left) &&
-    //   round(a.top) < round(b.top + b.height) &&
-    //   round(a.top + a.height) > round(b.top)
-    // );
 
     return (shareVerticalEdge && verticalOverlap) || (shareHorizontalEdge && horizontalOverlap);
   }

@@ -17,22 +17,9 @@ class Grid {
     return gridSize / 2;
   }
 
-  // snapToGrid(dimensions) {
-  //   const containerBoundingBox = this.parent.boundingBox;
-  //   const gridSize = {
-  //     x: containerBoundingBox.width / this.cols,
-  //     y: containerBoundingBox.height / this.rows
-  //   };
-  //   const gridDimensions = {
-  //     x: Math.round(dimensions.x / (gridSize.x)),
-  //     y: Math.round(dimensions.y / (gridSize.y)),
-  //   };
-  //   return {
-  //     x: gridDimensions.x * gridSize.x,
-  //     y: gridDimensions.y * gridSize.y
-  //   }
-  // }
-
+  /**
+   * Draws the grid and its elements
+   */
   updateGridTemplate() {
     this.element.style.gridTemplateRows = `repeat(${this.rows}, 1fr)`;
     this.element.style.gridTemplateColumns = `repeat(${this.cols}, 1fr)`;
