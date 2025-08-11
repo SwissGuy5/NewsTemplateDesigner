@@ -11,11 +11,25 @@ class InputHandler {
     this.setListeners();
   }
 
-  get relativeMousePos() {
-    const boundingBox = this.referenceElement.getBoundingClientRect();
+  get gridMousePos() {
+    const boundingBox = this.container.boundingBox;
+    const relativeX = this.mousePos.x - boundingBox.left;
+    const relativeY = this.mousePos.y - boundingBox.top;
+
     return {
-      x: this.mousePos.x - boundingBox.left,
-      y: this.mousePos.y - boundingBox.top
+      x: relativeX / boundingBox.width * this.container.grid.cols,
+      y: relativeY / boundingBox.height * this.container.grid.rows
+    }
+  }
+
+  get normalisedMousePos() {
+    const boundingBox = this.container.boundingBox;
+    const relativeX = this.mousePos.x - boundingBox.left;
+    const relativeY = this.mousePos.y - boundingBox.top;
+
+    return {
+      x: relativeX / boundingBox.width,
+      y: relativeY / boundingBox.height
     }
   }
 

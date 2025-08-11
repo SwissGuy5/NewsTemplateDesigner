@@ -6,12 +6,9 @@ class Container {
    */
   constructor (containerElement, firstSegmentElement, gridElement) {
     this.element = containerElement || document.getElementById("container");
-    this.segments = [new Segment(this, firstSegmentElement)];
-    this.inputHandler = new InputHandler(this);
     this.grid = new Grid(this, gridElement);
-    this.settings = {
-      snap: true
-    }
+    this.segments = [new Segment(this, firstSegmentElement, { top: 0, left: 0, height: this.grid.rows, width: this.grid.cols })];
+    this.inputHandler = new InputHandler(this);
   }
 
   get boundingBox() {
@@ -19,30 +16,21 @@ class Container {
   }
 
   get focusedSegment() {
-    return this.findSegment(this.inputHandler.relativeMousePos.x, this.inputHandler.relativeMousePos.y);
+    return this.findSegment(this.inputHandler.gridMousePos.x, this.inputHandler.gridMousePos.y);
   }
 
-  get minGap() {
-    return this.grid.minGap;
-  }
-
+  // TODO: Revisit, remove precision equality, rename vars
   getNeighbors(segment) {
     let neighbors = { left: [], right: [], top: [], bottom: [] };
-    const segmentPercentages = segment.percentages;
-    console.log(segmentPercentages)
+    const segmentNBB = segment.dimensions;
     this.segments.forEach((segment2, i) => {
       if (segment.isTouching(segment2) && segment != segment2) {
-        const segment2Percentages = segment2.percentages;
-
-        // if (precisionEquality(segment.boundingBox.left, segment2.boundingBox.left + segment2.boundingBox.width)) neighbors.left.push(segment2);
-        // if (precisionEquality(segment.boundingBox.left + segment.boundingBox.width, segment2.boundingBox.left)) neighbors.right.push(segment2);
-        // if (precisionEquality(segment.boundingBox.top, segment2.boundingBox.top + segment2.boundingBox.height)) neighbors.top.push(segment2);
-        // if (precisionEquality(segment.boundingBox.top + segment.boundingBox.height, segment2.boundingBox.top)) neighbors.bottom.push(segment2);
-
-        if (precisionEquality(segmentPercentages.left, segment2Percentages.left + segment2Percentages.width)) neighbors.left.push(segment2);
-        if (precisionEquality(segmentPercentages.left + segmentPercentages.width, segment2Percentages.left)) neighbors.right.push(segment2);
-        if (precisionEquality(segmentPercentages.top, segment2Percentages.top + segment2Percentages.height)) neighbors.top.push(segment2);
-        if (precisionEquality(segmentPercentages.top + segmentPercentages.height, segment2Percentages.top)) neighbors.bottom.push(segment2);
+        const segment2NBB = segment2.dimensions;
+        
+        if (precisionEquality(segmentNBB.left, segment2NBB.left + segment2NBB.width)) neighbors.left.push(segment2);
+        if (precisionEquality(segmentNBB.left + segmentNBB.width, segment2NBB.left)) neighbors.right.push(segment2);
+        if (precisionEquality(segmentNBB.top, segment2NBB.top + segment2NBB.height)) neighbors.top.push(segment2);
+        if (precisionEquality(segmentNBB.top + segmentNBB.height, segment2NBB.top)) neighbors.bottom.push(segment2);
       }
     })
     return neighbors;
@@ -50,8 +38,8 @@ class Container {
 
   /**
    * Locates a segment given the cursor's position.
-   * @param {number} x The relative x position of the cursor to the container.
-   * @param {number} y The relative y position of the cursor to the container.
+   * @param {number} x The normalised x position of the cursor to the container.
+   * @param {number} y The normalised y position of the cursor to the container.
    * @returns {Segment} Returns the segment, or null if outside any segments.
    */
   findSegment(x, y) {
@@ -65,8 +53,8 @@ class Container {
     return foundSegment;
   }
 
-  addSegment(newElement) {
-    const newSegment = new Segment(this, newElement);
+  addSegment(newElement, dimensions) {
+    const newSegment = new Segment(this, newElement, dimensions);
     this.element.appendChild(newElement);
     this.segments.push(newSegment);
     return newSegment;
@@ -87,37 +75,32 @@ class Container {
 
     // If new edge is too close to existing edge
     const nearestEdge = segment.nearestEdge;
-    if (nearestEdge.distance < this.minGap) return;
+    if (nearestEdge.distance < this.grid.gridMinGap) return;
     
     // Get dimensions and snap to grid
-    const relativeMousePos = this.inputHandler.relativeMousePos;
-    let newDimensions = {
-      x: relativeMousePos.x - segment.boundingBox.left,
-      y: relativeMousePos.y - segment.boundingBox.top
+    const gridMousePos = this.inputHandler.gridMousePos;
+    let relativeGridMousePos = {
+      x: Math.round(gridMousePos.x - segment.dimensions.left),
+      y: Math.round(gridMousePos.y - segment.dimensions.top)
     };
-    if (this.settings.snap) newDimensions = this.grid.snapToGrid(newDimensions);
     
-    const segmentPercentages = segment.percentages;
-    const newPercentages = {
-      width: newDimensions.x / segment.boundingBox.width * segmentPercentages.width,
-      height: newDimensions.y / segment.boundingBox.height * segmentPercentages.height
-    }
+    const s1 = segment.dimensions;    
     const newSegment = segment.duplicate();
     if (type == "vertical") {
       segment.resize({
-        width: newPercentages.width
+        width: relativeGridMousePos.x
       })
       newSegment.resize({
-        left: segmentPercentages.left + newPercentages.width,
-        width: segmentPercentages.width - newPercentages.width
+        left: s1.left + relativeGridMousePos.x,
+        width: s1.width - relativeGridMousePos.x
       })
     } else if (type == "horizontal") {
       segment.resize({
-        height: newPercentages.height
+        height: relativeGridMousePos.y
       })
       newSegment.resize({
-        top: segmentPercentages.top + newPercentages.height,
-        height: segmentPercentages.height - newPercentages.height
+        top: s1.top + relativeGridMousePos.y,
+        height: s1.height - relativeGridMousePos.y
       })
     }
   }
@@ -127,8 +110,7 @@ class Container {
     if (!segment) return;
     
     const nearestEdge = segment.nearestEdge;
-    if (nearestEdge.distance > this.minGap) return;
-    console.log(nearestEdge)
+    if (nearestEdge.distance > this.grid.gridMinGap) return;
 
     const neighbors = this.getNeighbors(segment);
     console.log(neighbors);
@@ -136,8 +118,9 @@ class Container {
     // Detect which edge to remove and delete if both segments align perfectly (check if single neighbor and is single neighbor of neighbor)
     if (neighbors[nearestEdge.type].length == 1 && this.getNeighbors(neighbors[nearestEdge.type][0])[oppositeDirection[nearestEdge.type]].length == 1) {
       const neighborSegment = neighbors[nearestEdge.type][0];
-      const neighborPercentages = neighborSegment.percentages;
-      const segmentPercentages = segment.percentages;
+      console.log(neighborSegment)
+      const neighborPercentages = neighborSegment.dimensions;
+      const segmentPercentages = segment.dimensions;
       const newPercentages = {
         left: Math.min(neighborPercentages.left, segmentPercentages.left),
         top: Math.min(neighborPercentages.top, segmentPercentages.top),
